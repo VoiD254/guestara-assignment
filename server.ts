@@ -2,14 +2,18 @@ import express, { type NextFunction, type Request, type RequestHandler, type Res
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
 import configuration from "./configuration.js";
 import { initializeAppEnvironment, closeAppEnvironment } from "./src/config/index.js";
+import { swaggerSpec } from "./src/config/swagger.js";
 
 const app = express();
 
 app.use(express.json({ limit: "50kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const allowedOrigins = (process.env.CORS_ORIGINS || "")
     .split(",")

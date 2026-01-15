@@ -1,0 +1,45 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: guestara-api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - DATABASE_URL=${DATABASE_URL}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - guestara-network
+
+  # Optional: Local MongoDB for development
+  # Uncomment if you need a local database instead of cloud MongoDB
+  # mongodb:
+  #   image: mongo:7
+  #   container_name: guestara-mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=password
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   networks:
+  #     - guestara-network
+
+networks:
+  guestara-network:
+    driver: bridge
+
+# volumes:
+#   mongodb_data:

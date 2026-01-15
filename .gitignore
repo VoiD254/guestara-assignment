@@ -1,4 +1,6 @@
 node_modules
 .env
 dist
-.local.env
+configs/.*.env
+coverage
+goal.docx

@@ -896,8 +896,9 @@ npm run seed
 
 Testing
 Test Strategy
-                 ╱╲
-                ╱  ╲Continue3:13 AM╱ E2E╲         (5% - Full API tests)
+╱╲
+╱  ╲
+╱ E2E╲         (5% - Full API tests)
 ╱──────╲
 ╱        ╲
 ╱Integration╲     (25% - Service + DB)
