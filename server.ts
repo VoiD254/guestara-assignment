@@ -1,4 +1,4 @@
-import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import helmet from "helmet";
@@ -6,6 +6,8 @@ import swaggerUi from "swagger-ui-express";
 import configuration from "./configuration.js";
 import { initializeAppEnvironment, closeAppEnvironment } from "./src/config/index.js";
 import { swaggerSpec } from "./src/config/swagger.js";
+import routes from "./src/route/index.js";
+import { AppError } from "./src/common/utils/AppError.js";
 
 const app = express();
 
@@ -37,21 +39,23 @@ if (configuration.NODE_ENV !== "production") {
     app.use(morgan("combined"));
 }
 
-export const asyncHandler =
-    (fn: RequestHandler) => (req: Request, res: Response, next: NextFunction) =>
-        Promise.resolve(fn(req, res, next)).catch(next);
+
 
 app.get("/health", (_req, res) => res.status(200).json({ status: "ok" }));
 app.get("/ready", (_req, res) => res.status(200).json({ ready: true }));
+
+app.use("/api/v1", routes);
 
 app.use((_req: Request, res: Response) => {
     res.status(404).json({ message: "Route not found" });
 });
 
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const msg = configuration.NODE_ENV === "production" ? "Something went wrong!" : err.message;
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    const statusCode = err instanceof AppError ? err.statusCode : 500;
+    const message = err instanceof AppError ? err.message :
+        configuration.NODE_ENV === "production" ? "Something went wrong!" : String(err);
     console.error(err);
-    res.status(500).json({ message: msg });
+    res.status(statusCode).json({ success: false, message });
 });
 
 let server: ReturnType<typeof app.listen> | null = null;
