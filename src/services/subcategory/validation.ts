@@ -157,11 +157,6 @@ type CreateSubcategoryDto = z.infer<typeof createSubcategorySchema>;
 type UpdateSubcategoryDto = z.infer<typeof updateSubcategorySchema>;
 type ListSubcategoriesQuery = z.infer<typeof listSubcategoriesSchema>;
 
-enum InheritedFrom {
-    CATEGORY = 'category',
-    SUBCATEGORY = 'subcategory',
-}
-
 export {
     createSubcategorySchema,
     type CreateSubcategoryDto,
@@ -169,5 +164,5 @@ export {
     type UpdateSubcategoryDto,
     listSubcategoriesSchema,
     type ListSubcategoriesQuery,
-    InheritedFrom
+    objectIdSchema
 }

@@ -16,10 +16,11 @@ import {
     type CreateSubcategoryDto,
     type UpdateSubcategoryDto,
     type ListSubcategoriesQuery,
-    InheritedFrom,
 } from './validation.js';
 import { findCategoryById } from '../category/index.js';
+import { findItemsBySubcategoryIdDao } from '../items/dao.js';
 import { AppError } from '../../common/utils/AppError.js';
+import { InheritedFrom } from '../../common/types/category.js';
 
 async function createSubcategory(data: CreateSubcategoryDto): Promise<Subcategory> {
     const category = await findCategoryById(data.categoryId);
@@ -104,7 +105,12 @@ async function updateSubcategory(id: string, data: UpdateSubcategoryDto): Promis
 async function softDeleteSubcategory(id: string): Promise<void> {
     await findSubcategoryById(id);
 
-    // TODO: Check if subcategory has active items when item model is ready
+    // Check for active items under this subcategory
+    const items = await findItemsBySubcategoryIdDao(id);
+    if (items.length > 0) {
+        throw new AppError(`Cannot delete subcategory with ${items.length} active item(s). Delete or deactivate them first.`, 400);
+    }
+
     await softDeleteSubcategoryDao(id);
 }
 
