@@ -33,12 +33,12 @@ We follow a **Layered Architecture** to ensure Separation of Concerns, making th
 
 ```mermaid
 graph TD
-    Client[Client Layer] -->|HTTP Request| Server[Express Server]
-    Server -->|Routes| RouteLayer[Route Layer]
-    RouteLayer -->|Validation| Middleware[Zod Middleware]
-    Middleware -->|Business Logic| ServiceLayer[Service Layer]
-    ServiceLayer -->|Data Access| DalLayer[Data Access Layer (DAO)]
-    DalLayer -->|Mongoose Models| DB[(MongoDB)]
+    Client["Client Layer"] -->|HTTP Request| Server["Express Server"]
+    Server -->|Routes| RouteLayer["Route Layer"]
+    RouteLayer -->|Validation| Middleware["Zod Middleware"]
+    Middleware -->|Business Logic| ServiceLayer["Service Layer"]
+    ServiceLayer -->|Data Access| DalLayer["Data Access Layer (DAO)"]
+    DalLayer -->|Mongoose Models| DB[("MongoDB")]
 ```
 
 ### Layer Responsibilities
@@ -122,6 +122,105 @@ try {
     await session.abortTransaction();
 }
 ```
+
+---
+
+## 🔌 API Documentation & Usage
+
+### Core Endpoints
+
+#### 1. Calculate Price (The 'Complex' Endpoint)
+**GET** `/items/:id/price?quantity=2&time=10:30&addons[]=addon1`
+
+*Calculates dynamic price based on context (time/quantity) and resolves tax inheritance.*
+
+```json
+{
+  "success": true,
+  "data": {
+    "item_id": "...",
+    "pricing_rule": "tiered",
+    "base_price": 500,
+    "addons": [{"name": "Projector", "price": 100}],
+    "addon_total": 100,
+    "subtotal": 600,
+    "tax": {
+      "applicable": true,
+      "percentage": 18,
+      "amount": 108,
+      "inherited_from": "category" 
+    },
+    "grand_total": 708
+  }
+}
+```
+
+#### 2. Create Item (With Validation)
+**POST** `/items`
+```json
+{
+  "name": "Cappuccino",
+  "//": "XOR Constraint: Provide category_id OR subcategory_id, not both",
+  "category_id": "507f1f77bcf86cd799439011", 
+  "pricing_type": "static",
+  "pricing_config": { "price": 200 }
+}
+```
+
+#### 3. Advanced Search
+**GET** `/items?search=coffee&minPrice=100&category=beverages&sortBy=price`
+*Uses MongoDB Aggregation Pipeline to filter across relationships.*
+
+---
+
+## 🧠 Advanced Engineering Decisions
+
+### 1. Soft Deletes with "Virtual Cascading"
+**The Problem**: When a Category is deleted, what happens to its Items?
+*   **Physical Cascade**: Update all items to `is_active: false`. (Write heavy, hard to undo).
+*   **Virtual Cascade** (Selected): Keep items untouched. Filter them out at runtime if their parent is inactive.
+    *   *Benefit*: Data Integrity. We never lose the "history" of an item.
+    *   *Tradeoff*: Queries are slightly more complex (must `$lookup` parent status).
+
+### 2. Tax Inheritance: Why Runtime Resolution?
+We considered three strategies for handling tax updates:
+
+| Approach | Pros | Cons | Decision |
+|----------|------|------|----------|
+| **Denormalize** (Store on Item) | Fast reads | Stale data on update | ❌ |
+| **Triggers** (Auto-update) | Always synced | DB-specific, hard to test | ❌ |
+| **Runtime Resolution** | Always fresh | Logic in code, testable | ✅ |
+
+### 3. Search via Aggregation Pipeline
+We used MongoDB's Aggregation Framework instead of simple `.find()` queries to handling complex filtering (joining Categories, filtering by `pricingConfig.price` inside polymorphic objects) in a single database round-trip.
+
+---
+
+## 📝 Written Reflections
+
+### 1. Why did you choose your database?
+**MongoDB** was chosen over SQL for its flexibility with **polymorphic data structures**.
+*   Our strict requirement was to support 5 different pricing models (`Static`, `Tiered`, `Dynamic`, etc.), each with a unique schema structure.
+*   In a relational database like PostgreSQL, this would require either a complex EAV (Entity-Attribute-Value) pattern, multiple join tables, or a `JSONB` column that loses some type safety.
+*   MongoDB allows us to store these varying `pricingConfig` objects naturally within the Item document, while Zod ensures we maintain application-level schema validation.
+
+### 2. Three things you learned while building this
+1.  **Transactional Complexity**: Implementing preventing double-bookings taught me that "checking availability" and "creating a booking" are not atomic operations. I learned how to use `mongoose.startSession()` to lock reads and writes, ensuring data integrity during race conditions.
+2.  **Polymorphism in Practice**: I learned how to handle polymorphic data (Pricing Engine) cleanly in TypeScript by using Discriminated Unions (`type: 'static' | 'tiered'`) which allowed comprehensive type narrowing across the application.
+3.  **Inheritance Design Patterns**: I learned how to implement inheritance patterns like Tax Inheritance using a runtime resolution strategy rather than database-level triggers, which kept the logic testable and decoupled from the DB.
+
+### 3. The hardest technical design challenge
+**Designing the Pricing Engine Integration**: The challenge was not just calculating the price, but integrating it seamlessly with the Item schema while keeping the database queryable.
+*   *Challenge*: How to validate 5 different config structures at runtime?
+*   *Solution*: We used Zod's `discriminatedUnion` to create a validator that changes its rules based on the `pricingType` field. This ensured that a `tiered` item always has `tiers` array, while a `static` item always has a `price` number, preventing corrupt data states.
+
+### 4. What would you improve or refactor?
+If I had more time, I would prioritize:
+1.  **Cloudinary Integration**: Currently, images are simple URL strings. I would implement Cloudinary for actual image uploading, optimization, and resizing.
+2.  **Authentication & Authorization**: The system currently assumes a trusted user. I would add JWT-based Auth to secure endpoints and add role-based access control (Admin vs Customer).
+3.  **Redis & Rate Limiting**: To scale, I would add Redis to cache Category hierarchies (which rarely change) and implement Rate Limiting to prevent abuse of the Booking API.
+4.  **Logging & Monitoring**: Implement structured logging (Winston/Pino) and set up monitoring (Prometheus) to track error rates and latency.
+5.  **CI/CD Pipelines**: Automate testing and deployment workflows using GitHub Actions to ensure code quality on every push.
 
 ---
 
