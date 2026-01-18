@@ -2,6 +2,8 @@ import { Router } from 'express';
 import categoryRoutes from './category.js';
 import subcategoryRoutes from './subcategory.js';
 import itemRoutes from './item.js';
+import availabilityRoutes from './availability.js';
+import bookingRoutes from './booking.js';
 
 const router = Router();
 
@@ -15,7 +17,8 @@ router.get('/', (_req, res) => {
             categories: '/api/v1/categories',
             subcategories: '/api/v1/subcategories',
             items: '/api/v1/items',
-            // bookings: '/api/v1/bookings',
+            availabilities: '/api/v1/availabilities',
+            bookings: '/api/v1/bookings',
         },
     });
 });
@@ -23,5 +26,8 @@ router.get('/', (_req, res) => {
 router.use('/categories', categoryRoutes);
 router.use('/subcategories', subcategoryRoutes);
 router.use('/items', itemRoutes);
+router.use('/availabilities', availabilityRoutes);
+router.use('/bookings', bookingRoutes);
 
 export default router;
+
