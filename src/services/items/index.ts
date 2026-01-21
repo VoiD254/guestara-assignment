@@ -1,6 +1,6 @@
 import type { Item, Addon } from './schema.js';
 import type { PaginatedResponse } from '../../common/types/index.js';
-import type { PriceBreakdown, PriceCalculationOptions } from '../../common/types/pricing.js';
+import { PricingType, type PriceBreakdown, type PriceCalculationOptions, type DiscountedPricingConfig } from '../../common/types/pricing.js';
 import { InheritedFrom } from '../../common/types/category.js';
 import { AppError } from '../../common/utils/AppError.js';
 
@@ -213,7 +213,27 @@ async function calculateItemPrice(id: string, options: PriceCalculationQuery): P
 
     validatePricingOptions(item.pricingType, options as PriceCalculationOptions);
 
-    const basePrice = calculateBasePrice(item.pricingConfig, options as PriceCalculationOptions);
+    // Calculate price (for discounted items, this returns the discounted price)
+    const calculatedPrice = calculateBasePrice(item.pricingConfig, options as PriceCalculationOptions);
+
+    // For discounted items, basePrice should be the original (non-discounted) price
+    let basePrice: number;
+    let discountInfo: PriceBreakdown['discount'];
+
+    if (item.pricingType === PricingType.DISCOUNTED) {
+        const config = item.pricingConfig as DiscountedPricingConfig;
+        basePrice = config.basePrice;
+        discountInfo = {
+            type: config.discount.type,
+            value: config.discount.value,
+            discountedPrice: calculatedPrice,
+        };
+    } else {
+        basePrice = calculatedPrice;
+        discountInfo = undefined;
+    }
+
+    const effectivePrice = discountInfo ? discountInfo.discountedPrice : basePrice;
 
     const addonDetails: Array<{ id: string; name: string; price: number }> = [];
     let addonTotal = 0;
@@ -251,7 +271,7 @@ async function calculateItemPrice(id: string, options: PriceCalculationQuery): P
         }
     }
 
-    const subtotal = basePrice + addonTotal;
+    const subtotal = effectivePrice + addonTotal;
 
     // Resolve tax
     const taxInfo = resolveTax(item);
@@ -264,6 +284,7 @@ async function calculateItemPrice(id: string, options: PriceCalculationQuery): P
         itemName: item.name,
         pricingRule: item.pricingType,
         basePrice,
+        ...(discountInfo && { discount: discountInfo }),
         addons: addonDetails,
         addonTotal,
         subtotal,

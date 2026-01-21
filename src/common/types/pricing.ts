@@ -113,6 +113,11 @@ export interface PriceBreakdown {
     itemName: string;
     pricingRule: PricingType;
     basePrice: number;
+    discount?: {
+        type: DiscountType;
+        value: number;
+        discountedPrice: number;
+    };
     addons: Array<{
         id: string;
         name: string;
