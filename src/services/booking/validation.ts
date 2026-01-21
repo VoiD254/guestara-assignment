@@ -49,7 +49,10 @@ export const listBookingsSchema = z.object({
 });
 
 export const availableSlotsSchema = z.object({
-    date: dateSchema,
+    date: dateSchema.optional().default(() => {
+        const today = new Date();
+        return today.toISOString().split('T')[0]!;
+    }),
 });
 
 export type CreateBookingDto = z.infer<typeof createBookingSchema>;

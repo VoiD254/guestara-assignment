@@ -211,13 +211,10 @@ async function calculateItemPrice(id: string, options: PriceCalculationQuery): P
         throw new AppError('Cannot calculate price for inactive item', 400);
     }
 
-    // Validate options for pricing type
     validatePricingOptions(item.pricingType, options as PriceCalculationOptions);
 
-    // Calculate base price
     const basePrice = calculateBasePrice(item.pricingConfig, options as PriceCalculationOptions);
 
-    // Calculate addon prices
     const addonDetails: Array<{ id: string; name: string; price: number }> = [];
     let addonTotal = 0;
 

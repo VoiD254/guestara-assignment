@@ -41,7 +41,7 @@ export const updateAvailabilitySchema = z.object({
 export const listAvailabilitiesSchema = z.object({
     itemId: objectIdSchema.optional(),
     dayOfWeek: z.nativeEnum(DayOfWeek).optional(),
-    active: z.string().optional().transform((val) => val === 'true').pipe(z.boolean()).optional(),
+    active: z.string().optional().transform((val) => val === undefined ? undefined : val === 'true'),
 });
 
 export type CreateAvailabilityDto = z.infer<typeof createAvailabilitySchema>;

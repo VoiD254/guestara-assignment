@@ -164,6 +164,8 @@ describe('Item Service', () => {
                 limit: 10,
                 sortBy: 'name',
                 order: 'asc',
+                active: undefined,
+                isBookable: undefined,
             });
 
             expect(result.data).toHaveLength(2);
@@ -178,6 +180,7 @@ describe('Item Service', () => {
                 limit: 10,
                 sortBy: 'name',
                 order: 'asc',
+                active: undefined,
                 isBookable: true,
             });
 

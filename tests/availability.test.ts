@@ -97,7 +97,7 @@ describe('Availability Service', () => {
                 expect(availability.dayOfWeek).toBe(day);
             }
 
-            const allAvailabilities = await findAllAvailabilities({});
+            const allAvailabilities = await findAllAvailabilities({ active: undefined });
             expect(allAvailabilities).toHaveLength(5);
         });
     });
@@ -110,17 +110,17 @@ describe('Availability Service', () => {
         });
 
         it('should return all availabilities', async () => {
-            const availabilities = await findAllAvailabilities({});
+            const availabilities = await findAllAvailabilities({ active: undefined });
             expect(availabilities).toHaveLength(3);
         });
 
         it('should filter by itemId', async () => {
-            const availabilities = await findAllAvailabilities({ itemId: bookableItemId });
+            const availabilities = await findAllAvailabilities({ active: undefined, itemId: bookableItemId });
             expect(availabilities).toHaveLength(3);
         });
 
         it('should filter by dayOfWeek', async () => {
-            const availabilities = await findAllAvailabilities({ dayOfWeek: DayOfWeek.MON });
+            const availabilities = await findAllAvailabilities({ active: undefined, dayOfWeek: DayOfWeek.MON });
             expect(availabilities).toHaveLength(1);
             expect(availabilities[0]!.dayOfWeek).toBe(DayOfWeek.MON);
         });

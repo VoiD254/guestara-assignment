@@ -227,11 +227,11 @@ export const listItemsSchema = z.object({
     sortBy: z.enum(['name', 'createdAt', 'updatedAt']).optional().default('createdAt'),
     order: z.enum(['asc', 'desc']).optional().default('desc'),
     search: z.string().optional(),
-    active: z.string().optional().transform((val) => val === 'true').pipe(z.boolean()).optional(),
+    active: z.string().optional().transform((val) => val === undefined ? undefined : val === 'true'),
     categoryId: objectIdSchema.optional(),
     subcategoryId: objectIdSchema.optional(),
     pricingType: z.nativeEnum(PricingType).optional(),
-    isBookable: z.string().optional().transform((val) => val === 'true').pipe(z.boolean()).optional(),
+    isBookable: z.string().optional().transform((val) => val === undefined ? undefined : val === 'true'),
 });
 
 export const priceCalculationSchema = z.object({
